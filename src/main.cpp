@@ -1,174 +1,157 @@
-#include <Arduino.h>
+/**
+ * A BLE client example that is rich in capabilities.
+ * There is a lot new capabilities implemented.
+ * author unknown
+ * updated by chegewara
+ */
+
+#include "BLEDevice.h"
 #include "WiFi.h"
+#include "BLEScan.h"
 
-const char* WIFI_SSID = "motorola edge 30 neo_9883";
-const char* WIFI_PASS = "motorola";
+// The remote service we wish to connect to.
+static BLEUUID serviceUUID("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
+// The characteristic of the remote service we are interested in.
+static BLEUUID charUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8");
 
-const char* HOST = "neverssl.com";
-const int PORT = 80;
+static boolean doConnect = false;
+static boolean connected = false;
+static boolean doScan = false;
+static BLERemoteCharacteristic *pRemoteCharacteristic;
+static BLEAdvertisedDevice *myDevice;
 
-const int LED_PIN = 2; 
-bool isWiFiConnected = false; 
-
-void connectToWiFi() {
-    Serial.print("Connecting to ");
-    Serial.println(WIFI_SSID);
-
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    delay(100);
-
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
-    Serial.println("Connecting...");
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(1000);
-        Serial.print(".");
-    }
-
-    Serial.println("\nWiFi connected");
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
-    isWiFiConnected = true;
-    digitalWrite(LED_PIN, LOW); 
-
+static void notifyCallback(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify) {
+  Serial.print("Notify callback for characteristic ");
+  Serial.print(pBLERemoteCharacteristic->getUUID().toString().c_str());
+  Serial.print(" of data length ");
+  Serial.println(length);
+  Serial.print("data: ");
+  Serial.write(pData, length);
+  Serial.println();
 }
 
-void fetchWebPage() {
-    if (WiFi.status() == WL_CONNECTED) {
-        WiFiClient client;
+class MyClientCallback : public BLEClientCallbacks {
+  void onConnect(BLEClient *pclient) {}
 
-        Serial.print("Connecting to ");
-        Serial.print(HOST);
-        Serial.print(":");
-        Serial.println(PORT);
+  void onDisconnect(BLEClient *pclient) {
+    connected = false;
+    Serial.println("onDisconnect");
+  }
+};
 
-        if (!client.connect(HOST, PORT)) {
-            Serial.println("Connection to server failed!");
-            return;
-        }
+bool connectToServer() {
+  Serial.print("Forming a connection to ");
+  Serial.println(myDevice->getAddress().toString().c_str());
 
-        client.println("GET / HTTP/1.1");
-        client.print("Host: ");
-        client.println(HOST);
-        client.println("Connection: close");
-        client.println();
+  BLEClient *pClient = BLEDevice::createClient();
+  Serial.println(" - Created client");
 
-        Serial.println("Response:");
-        while (client.connected() || client.available()) {
-            if (client.available()) {
-                String line = client.readStringUntil('\n');
-                Serial.println(line);
-            }
-        }
+  pClient->setClientCallbacks(new MyClientCallback());
 
-        client.stop(); 
-        Serial.println("Connection closed.");
+  // Connect to the remove BLE Server.
+  pClient->connect(myDevice);  // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
+  Serial.println(" - Connected to server");
+  pClient->setMTU(517);  //set client to request maximum MTU from server (default is 23 otherwise)
+
+  // Obtain a reference to the service we are after in the remote BLE server.
+  BLERemoteService *pRemoteService = pClient->getService(serviceUUID);
+  if (pRemoteService == nullptr) {
+    Serial.print("Failed to find our service UUID: ");
+    Serial.println(serviceUUID.toString().c_str());
+    pClient->disconnect();
+    return false;
+  }
+  Serial.println(" - Found our service");
+
+  // Obtain a reference to the characteristic in the service of the remote BLE server.
+  pRemoteCharacteristic = pRemoteService->getCharacteristic(charUUID);
+  if (pRemoteCharacteristic == nullptr) {
+    Serial.print("Failed to find our characteristic UUID: ");
+    Serial.println(charUUID.toString().c_str());
+    pClient->disconnect();
+    return false;
+  }
+  Serial.println(" - Found our characteristic");
+
+  // Read the value of the characteristic.
+  if (pRemoteCharacteristic->canRead()) {
+    //String value = pRemoteCharacteristic->readValue();
+    Serial.print("The characteristic value was: ");
+    Serial.println(1);
+  }
+
+  if (pRemoteCharacteristic->canNotify()) {
+    pRemoteCharacteristic->registerForNotify(notifyCallback);
+  }
+
+  connected = true;
+  return true;
+}
+/**
+ * Scan for BLE servers and find the first one that advertises the service we are looking for.
+ */
+class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
+  /**
+   * Called for each advertising BLE server.
+   */
+  void onResult(BLEAdvertisedDevice advertisedDevice) {
+    Serial.print("BLE Advertised Device found: ");
+    Serial.println(advertisedDevice.toString().c_str());
+
+    // We have found a device, let us now see if it contains the service we are looking for.
+    if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID)) {
+
+      BLEDevice::getScan()->stop();
+      myDevice = new BLEAdvertisedDevice(advertisedDevice);
+      doConnect = true;
+      doScan = true;
+
+    }  // Found our server
+  }  // onResult
+};  // MyAdvertisedDeviceCallbacks
+
+void setup1() {
+  Serial.begin(115200);
+  Serial.println("Starting Arduino BLE Client application...");
+  BLEDevice::init("");
+
+  // Retrieve a Scanner and set the callback we want to use to be informed when we
+  // have detected a new device.  Specify that we want active scanning and start the
+  // scan to run for 5 seconds.
+  BLEScan *pBLEScan = BLEDevice::getScan();
+  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  pBLEScan->setInterval(1349);
+  pBLEScan->setWindow(449);
+  pBLEScan->setActiveScan(true);
+  pBLEScan->start(5, false);
+}  // End of setup.
+
+// This is the Arduino main loop function.
+void loop1() {
+
+  // If the flag "doConnect" is true then we have scanned for and found the desired
+  // BLE Server with which we wish to connect.  Now we connect to it.  Once we are
+  // connected we set the connected flag to be true.
+  if (doConnect == true) {
+    if (connectToServer()) {
+      Serial.println("We are now connected to the BLE Server.");
     } else {
-        Serial.println("WiFi not connected. Cannot fetch web page.");
+      Serial.println("We have failed to connect to the server; there is nothing more we will do.");
     }
-}
+    doConnect = false;
+  }
 
-void setup() {
-    Serial.begin(9600);
-    delay(2000);
+  // If we are connected to a peer BLE Server, update the characteristic each time we are reached
+  // with the current time since boot.
+  if (connected) {
+    String newValue = "Time since boot: " + String(millis() / 1000);
+    Serial.println("Setting new characteristic value to \"" + newValue + "\"");
 
-    Serial.println("\nRunning Firmware.");
-    connectToWiFi();
-    fetchWebPage(); 
-}
+    // Set the characteristic's value to be the array of bytes that is actually a string.
+    pRemoteCharacteristic->writeValue(newValue.c_str(), newValue.length());
+  } else if (doScan) {
+    BLEDevice::getScan()->start(0);  // this is just example to start scan after disconnect, most likely there is better way to do it in arduino
+  }
 
-void loop() {
-    if (WiFi.status() != WL_CONNECTED) {
-        if (isWiFiConnected) {
-            Serial.println("ups! WiFi connection lost."); 
-            isWiFiConnected = false;
-            digitalWrite(LED_PIN, HIGH);
-        }
-        connectToWiFi(); 
-    } else {
-        if (!isWiFiConnected) {
-            Serial.println("Reconnected to WiFi!");
-            isWiFiConnected = true;
-            fetchWebPage(); 
-            digitalWrite(LED_PIN, LOW);
-        }
-    }
-
-    delay(1000); 
-}
-
-
-
-// #include <Arduino.h>
-// #include "WiFi.h"
-
-// // WiFi credentials
-// const char* WIFI_SSID = "motorola edge 30 neo_9883";
-// const char* WIFI_PASS = "motorola";
-
-// const int LED_PIN = 2; // Pin GPIO2 dla diody LED
-// bool isWiFiConnected = false; // Zmienna oznaczająca stan połączenia WiFi
-
-// void setup() {
-//     Serial.begin(9600);
-//     pinMode(LED_PIN, OUTPUT); // Ustawienie pinu diody jako wyjścia
-//     digitalWrite(LED_PIN, LOW); // Ustawienie LED na wyłączoną
-
-//     delay(2000);
-
-//     Serial.println();
-//     Serial.println("Running Firmware.");
-
-//     // Połączenie z WiFi
-//     Serial.println();
-//     Serial.println();
-//     Serial.print("Connecting to ");
-//     Serial.println(WIFI_SSID);
-
-//     WiFi.mode(WIFI_STA);
-//     WiFi.disconnect();
-//     delay(100);
-
-//     WiFi.begin(WIFI_SSID, WIFI_PASS);
-//     Serial.println("Connecting...");
-
-//     while (WiFi.status() != WL_CONNECTED) {
-//         Serial.print(".");  // Kropki dla wizualnego efektu
-//         delay(500);
-//     }
-
-//     Serial.println("\nWiFi connected");
-//     Serial.println("IP address: ");
-//     Serial.println(WiFi.localIP());
-//     isWiFiConnected = true; // WiFi połączone, ustawiamy zmienną na true
-// }
-
-// void loop() {
-//     // Sprawdzanie stanu połączenia WiFi co 500 ms
-//     if (WiFi.status() != WL_CONNECTED) {
-//         if (isWiFiConnected) {
-//             Serial.println("WiFi connection lost. Attempting to reconnect...");
-//             isWiFiConnected = false; // Zaktualizowanie stanu połączenia
-//         }
-
-//         // Mruganie diodą, jeśli brak połączenia
-//         digitalWrite(LED_PIN, HIGH);
-//         delay(200);
-//         digitalWrite(LED_PIN, LOW);
-//         delay(200);
-
-//         // Próba ponownego połączenia co 2 sekundy
-//         WiFi.disconnect();
-//         WiFi.reconnect();
-//         delay(2000);
-//     } else {
-//         // WiFi jest połączone, więc LED jest wyłączony
-//         if (!isWiFiConnected) {
-//             Serial.println("Reconnected to WiFi!");
-//             isWiFiConnected = true;
-//         }
-//         digitalWrite(LED_PIN, LOW);
-//         delay(500); // Opóźnienie 500 ms, gdy połączono
-//     }
-// }
+  delay(1000);  // Delay a second between loops.
+}  // End of loop
