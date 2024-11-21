@@ -1,37 +1,26 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <wifi/WiFiHandler.h>
 
-// Ustawienia WiFi
+
 const char* ssid = "Hotspot";
 const char* password = "heineken123";
 
-// Ustawienia MQTT
+
 const char* mqtt_server = "192.168.41.156";
 const int mqtt_port = 1885;
 const char* mqtt_user = "default";
 const char* mqtt_password = "default";
 
-// Identyfikator urządzenia i użytkownika
+
 const char* user_id = "123e4567-e89b-12d3-a456-426614174000";
 const char* device_id = "device_1";
 
-// Klient MQTT
+
 WiFiClient espClient;
 PubSubClient client(espClient);
+WiFiHandler wifiHandler(ssid, password);
 
-// Funkcja do łączenia z WiFi
-void setupWiFi() {
-  delay(10);
-  Serial.println("Łączenie z WiFi...");
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.print(".");
-  }
-
-  Serial.println("\nPołączono z WiFi");
-}
 
 // Funkcja do łączenia z brokerem MQTT
 void reconnect() {
@@ -51,11 +40,12 @@ void reconnect() {
 
 void setup() {
   Serial.begin(9600);
-  setupWiFi();
+  wifiHandler.connectToWiFi();
   client.setServer(mqtt_server, mqtt_port);
 }
 
 void loop() {
+  wifiHandler.monitorConnection();
   if (!client.connected()) {
     reconnect();
   }
