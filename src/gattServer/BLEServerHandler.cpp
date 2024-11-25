@@ -6,7 +6,7 @@ BLEServerHandler::BLEServerHandler(const std::string& deviceName, const std::str
       rng(dev()), randint(1, 10), pCharacteristic(nullptr) {}
 
 void BLEServerHandler::setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     Serial.println("Starting BLE server...");
 
     initializeBLE();
@@ -30,15 +30,10 @@ void BLEServerHandler::initializeBLE() {
         BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE
     );
 
-    pCharacteristic->setValue("Hello World from BLE Server!");
+    pCharacteristic->setValue("Initial");
     pService->start();
-
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    pAdvertising->addServiceUUID(serviceUUID);
-    pAdvertising->setScanResponse(true);
-    pAdvertising->setMinPreferred(0x06);
-    pAdvertising->setMinPreferred(0x12);
-
+    pAdvertising->addServiceUUID(pService->getUUID());
     BLEDevice::startAdvertising();
     Serial.println("BLE server initialized and advertising started!");
 }
