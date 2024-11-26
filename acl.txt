@@ -1,0 +1,9 @@
+# ACL for user 1
+user user1
+topic read /users/1/devices/#
+topic write /users/1/devices/#
+
+# ACL for user 2
+user user2
+topic read /users/2/devices/#
+topic write /users/2/#
