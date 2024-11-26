@@ -5,10 +5,10 @@
 
 BLEServerHandler bleServer("BLE server", SERVICE_UUID, CHARACTERISTIC_UUID);
 
-void setup1() {
+void setup() {
     bleServer.setup();
 }
 
-void loop1() {
+void loop() {
     bleServer.loop();
 }

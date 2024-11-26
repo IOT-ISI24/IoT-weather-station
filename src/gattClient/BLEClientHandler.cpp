@@ -1,7 +1,7 @@
 #include "BLEClientHandler.h"
 
 BLEClientHandler::BLEClientHandler(const BLEUUID& serviceUUID, const BLEUUID& charUUID)
-    : serviceUUID(serviceUUID), charUUID(charUUID), doConnect(false), connected(false), doScan(false),
+    : serviceUUID(serviceUUID), charUUID(charUUID), connected(false),
       pRemoteCharacteristic(nullptr), myDevice(nullptr) {}
 
 void BLEClientHandler::setup() {
@@ -11,27 +11,22 @@ void BLEClientHandler::setup() {
 
     BLEScan *pBLEScan = BLEDevice::getScan();
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks(this));
-    pBLEScan->setInterval(1349);
-    pBLEScan->setWindow(449);
+    pBLEScan->setInterval(1349); //how often
+    pBLEScan->setWindow(449); // how long
     pBLEScan->setActiveScan(true);
     pBLEScan->start(5, false);
 }
 
 void BLEClientHandler::loop() {
-    if (doConnect) {
+    if (!connected) {
         if (connectToServer()) {
             Serial.println("We are now connected to the BLE Server.");
         } else {
             Serial.println("Failed to connect to the server.");
         }
-        doConnect = false;
+        connected = true;
     }
-
-    if (doScan) {
-        BLEDevice::getScan()->start(0);
-        doScan = false;
-    }
-
+    BLEDevice::getScan()->start(0);
     delay(1000);
 }
 
@@ -42,11 +37,11 @@ bool BLEClientHandler::connectToServer() {
     BLEClient *pClient = BLEDevice::createClient();
     Serial.println(" - Created client");
 
-    pClient->setClientCallbacks(new MyClientCallback());
-    pClient->connect(myDevice); // Connect to the remote BLE Server
+    pClient->setClientCallbacks(new MyClientCallback(this));
+    pClient->connect(myDevice);
     Serial.println(" - Connected to server");
 
-    pClient->setMTU(517);
+    pClient->setMTU(30); // min 23 bytes
 
     BLERemoteService *pRemoteService = pClient->getService(serviceUUID);
     if (pRemoteService == nullptr) {
@@ -73,7 +68,7 @@ bool BLEClientHandler::connectToServer() {
 void BLEClientHandler::MyClientCallback::onConnect(BLEClient *pclient) {}
 
 void BLEClientHandler::MyClientCallback::onDisconnect(BLEClient *pclient) {
-    //BLEClientHandler::connected = false;
+    this->handler->connected = false;
     Serial.println("Disconnected from server.");
 }
 
@@ -83,8 +78,6 @@ void BLEClientHandler::MyAdvertisedDeviceCallbacks::onResult(BLEAdvertisedDevice
     if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(handler->serviceUUID)) {
         BLEDevice::getScan()->stop();
         handler->myDevice = new BLEAdvertisedDevice(advertisedDevice);
-        handler->doConnect = true;
-        handler->doScan = true;
     }
 }
 

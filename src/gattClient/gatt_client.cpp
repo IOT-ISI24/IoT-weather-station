@@ -5,10 +5,10 @@ BLEUUID charUUID("FFE1");
 
 BLEClientHandler bleClientHandler(serviceUUID, charUUID);
 
-void setup12() {
+void setup55() {
     bleClientHandler.setup();
 }
 
-void loop12() {
+void loop55() {
     bleClientHandler.loop();
 }

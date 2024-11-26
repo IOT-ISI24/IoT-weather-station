@@ -7,13 +7,12 @@ const char* ssid = "Hotspot";
 const char* password = "heineken123";
 
 
-const char* mqtt_server = "192.168.41.156";
+const char* mqtt_server = "192.168.196.156";
 const int mqtt_port = 1885;
-const char* mqtt_user = "default";
-const char* mqtt_password = "default";
+const char* mqtt_user = "user2";
+const char* mqtt_password = "password";
 
-
-const char* user_id = "123e4567-e89b-12d3-a456-426614174000";
+const char* user_id = "2";
 const char* device_id = "device_1";
 
 
@@ -22,7 +21,6 @@ PubSubClient client(espClient);
 WiFiHandler wifiHandler(ssid, password);
 
 
-// Funkcja do łączenia z brokerem MQTT
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Łączenie z brokerem MQTT...");
@@ -38,26 +36,41 @@ void reconnect() {
   }
 }
 
-void setup() {
+String generate_payload(){
+  float temperature = 25.0 + random(-100, 100) / 100.0;
+  float air_quality = 50.0 + random(-500, 500) / 100.0;
+  float pressure = 1013.0 + random(-200, 200) / 100.0;
+  float humidity = 60.0 + random(-300, 300) / 100.0;
+  String payload = "{";
+  payload += "\"temperature\":" + String(temperature) + ",";
+  payload += "\"air_quality\":" + String(air_quality) + ",";
+  payload += "\"pressure\":" + String(pressure) + ",";
+  payload += "\"humidity\":" + String(humidity);
+  payload += "}";
+  return payload;
+}
+
+void setup6() {
   Serial.begin(9600);
   wifiHandler.connectToWiFi();
   client.setServer(mqtt_server, mqtt_port);
 }
 
-void loop() {
+void loop6() {
   wifiHandler.monitorConnection();
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
 
-  // Symulacja odczytu z czujnika
   float temperature = 25.0 + random(-100, 100) / 100.0;
-
-  // Publikowanie danych
-  String topic = String("/users/") + user_id + "/devices/" + device_id + "/temperature";
-  String payload = String("{\"temperature\":") + temperature + "}";
+ 
+  String topic = String("/users/") + user_id + "/devices/" + device_id + "/data";
+  String payload = generate_payload();
   client.publish(topic.c_str(), payload.c_str());
+  Serial.print(payload);
 
-  delay(5000); // Wysyłaj dane co 5 sekund
+  delay(5000);
 }
+
+

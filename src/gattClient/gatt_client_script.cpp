@@ -92,7 +92,7 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
   } 
 }; 
 
-void setup1234() {
+void setup5() {
   Serial.begin(9600);
   Serial.println("Starting Arduino BLE Client application...");
   BLEDevice::init("");
@@ -106,7 +106,7 @@ void setup1234() {
 }  
 
 
-void loop1234() {
+void loop5() {
 
   if (doConnect == true) {
     if (connectToServer()) {

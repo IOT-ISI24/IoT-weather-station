@@ -1,5 +1,5 @@
-#include <Arduino.h>
-#include "WiFi.h"
+    #include <Arduino.h>
+    #include "WiFi.h"
 
 
 const char* WIFI_SSID = "motorola edge 30 neo_9883";
@@ -70,7 +70,7 @@ void fetchWebPage() {
     }
 }
 
-void setup123() {
+void setup1233() {
     Serial.begin(9600);
     delay(2000);
 
@@ -79,7 +79,7 @@ void setup123() {
     fetchWebPage(); 
 }
 
-void loop123() {
+void loop1233() {
     if (WiFi.status() != WL_CONNECTED) {
         if (isWiFiConnected) {
             Serial.println("ups! WiFi connection lost."); 
