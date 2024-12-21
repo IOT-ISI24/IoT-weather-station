@@ -10,7 +10,7 @@ const char* config_password = "zaq1@WSX";
 WiFiServer server(80);
 WiFiClient client;
 bool config_mode = false;
-bool connected = false;
+
 
 void setup() 
 {
@@ -41,17 +41,6 @@ void setup()
 
 		WiFi.mode(WIFI_STA);
 		WiFi.begin(net_ssid, net_pass);
-		wl_status_t status;
-		while((status = WiFi.status()) != WL_CONNECTED)
-		{
-			if(status == WL_CONNECT_FAILED || status == WL_NO_SSID_AVAIL)
-			{
-				Serial.println("Failed to connect");
-				break;
-			}
-
-			delay(1000);
-		}
 	}
 }
 
@@ -64,20 +53,21 @@ void loop()
 		config_loop();
 		return;
 	}
-	else
+	
+	while(WiFi.status() != WL_CONNECTED)
 	{
-		if(WiFi.status() == WL_CONNECTED)
-		{
-			Serial.print("RSSI signal: ");
-			Serial.println(WiFi.RSSI());
-		}
-		else
-		{
-			Serial.println("Not connected!");
-		}
+		WiFi.reconnect();
+		Serial.println("Not connected. Attempting to reconnect...");
+		delay(5000);
 	}
 
-	delay(5000);
+	if(WiFi.status() == WL_CONNECTED)
+	{
+		Serial.print("RSSI signal: ");
+		Serial.println(WiFi.RSSI());
+	}
+	
+	delay(1000);
 }
 
 void config_loop()
@@ -142,6 +132,7 @@ void config_loop()
 
 						NVS.setString("net_pass", req_pass, false);
 						NVS.commit();
+						config_mode = false;
 					}
 				}
 
@@ -151,5 +142,13 @@ void config_loop()
 
 		client.stop();
 		Serial.println("Disconnected client");
+	}
+	
+        if(!config_mode)
+	{
+		WiFi.mode(WIFI_STA);
+		String net_ssid = NVS.getString("net_ssid");
+		String net_pass = NVS.getString("net_pass");
+		WiFi.begin(net_ssid, net_pass);
 	}
 }
