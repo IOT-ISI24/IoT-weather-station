@@ -7,9 +7,9 @@
 #include <BLEServer.h>
 
 #define LED_PIN 2 
+#define DAC_PIN 25 
 // const char* ssid = "hotspot";
 // const char* password = "694202137";
-
 
 const char* mqtt_server = "10.204.41.0";
 const int mqtt_port = 1885;
@@ -41,25 +41,23 @@ void reconnect() {
     }
   }
 }
-/*
-String generate_payload(){
-  float temperature = 25.0 + random(-100, 100) / 100.0;
-  float air_quality = 50.0 + random(-500, 500) / 100.0;
-  float pressure = 1013.0 + random(-200, 200) / 100.0;
-  float humidity = 60.0 + random(-300, 300) / 100.0;
-  String payload = "{";
-  payload += "\"temperature\":" + String(temperature) + ",";
-  payload += "\"air_quality\":" + String(air_quality) + ",";
-  payload += "\"pressure\":" + String(pressure) + ",";
-  payload += "\"humidity\":" + String(humidity);
-  payload += "}";
-  return payload;
-}*/
+
 
 String generate_payload() {
-     float temperature = bme280.readTemperature();
-     //float temperature = 50.0;
-     float humidity = 50.0;
+    float temperature = bme280.readTemperature();
+    //float temperature = 50.0;
+    //  float humidity = 50.0;
+
+    float humidity = bme280.readHumidity();
+    if (isnan(humidity)) {
+      Serial.println("Błąd odczytu wilgotności!");
+      return;
+    }
+    int dacValue = map(humidity, 0, 100, 0, 255);
+    dacValue = constrain(dacValue, 0, 255); 
+    dacWrite(DAC_PIN, dacValue);
+
+
      float pressure = 50.0;
      //float humidity = bme280.readHumidity();
      //float pressure = bme280.readPressure() / 100.0F; // W hPa
@@ -126,7 +124,7 @@ void loop() {
   }
 
   client.loop();
-  
+
   String payload = generate_payload();
   String topic = String("/users/") + user_id + "/devices/" + device_id + "/data";
   client.publish(topic.c_str(), payload.c_str());
