@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <wifi/WiFiHandler.h>
+#include "BME280.h"
 
 
 const char* ssid = "Hotspot";
@@ -15,6 +16,7 @@ const char* mqtt_password = "password";
 const char* user_id = "2";
 const char* device_id = "device_1";
 
+BME280 bme280;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -50,11 +52,41 @@ String generate_payload(){
   return payload;
 }
 
+// String generate_payload() {
+//     float temperature = bme280.readTemperature();
+//     float humidity = bme280.readHumidity();
+//     float pressure = bme280.readPressure() / 100.0F; // W hPa
+//     float air_quality = 50.0; // Tutaj możesz dodać inny czujnik lub stałą
+
+//     String payload = "{";
+//     payload += "\"temperature\":" + String(temperature, 2) + ",";
+//     payload += "\"humidity\":" + String(humidity, 2) + ",";
+//     payload += "\"pressure\":" + String(pressure, 2) + ",";
+//     payload += "\"air_quality\":" + String(air_quality, 2);
+//     payload += "}";
+
+//     return payload;
+// }
+
+
 void setup6() {
   Serial.begin(9600);
   wifiHandler.connectToWiFi();
   client.setServer(mqtt_server, mqtt_port);
 }
+
+// void setup6() {
+//     Serial.begin(9600);
+//     wifiHandler.connectToWiFi();
+//     client.setServer(mqtt_server, mqtt_port);
+
+//     if (!bme280.begin(0x76)) {
+//         Serial.println("Nie znaleziono czujnika BME280!");
+//         while (1);
+//     }
+//     Serial.println("Czujnik BME280 zainicjalizowany.");
+// }
+
 
 void loop6() {
   wifiHandler.monitorConnection();
