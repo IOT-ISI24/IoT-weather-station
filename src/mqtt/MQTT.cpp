@@ -100,6 +100,15 @@ void setup() {
          while (1);
      }
      Serial.println("Czujnik BME280 zainicjalizowany.");
+
+     bme280.Meas_config(
+        BME280::BME280_NORMAL_MODE,      // Normal mode
+        BME280::BME280_FIlterMode_OFF,   // No filtering
+        BME280::BME280_StandbyTime_MS_125, // 125ms standby time
+        BME280::BME280_OVSX1,            // Pressure oversampling ×1
+        BME280::BME280_OVSX1,            // Humidity oversampling ×1
+        BME280::BME280_OVSX1             // Temperature oversampling ×1
+    );
  }
 
 
@@ -110,12 +119,8 @@ void loop() {
   }
   client.loop();
   String payload = generate_payload();
-  /*
   String topic = String("/users/") + user_id + "/devices/" + device_id + "/data";
-  ;
   client.publish(topic.c_str(), payload.c_str());
-
-  */
   delay(5000);
 }
 

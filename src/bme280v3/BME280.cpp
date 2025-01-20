@@ -56,6 +56,8 @@ bool BME280::begin(uint8_t addr, TwoWire *theWire){
   return true;
 }
 
+
+
 /* ponizej znajduja sie dodatkowe funkcje do kalibracji, po wrowadzeniu przez uzytkownika zwracaja odpowienia wartosc */
 
 		/* @brief ustawienia adresu
@@ -244,6 +246,12 @@ uint32_t BME280::read(byte reg, uint8_t variable_id) {
 
 void BME280::readCoefficients(void) {
   // Odczyt danych z rejestrow i zapis do odpowienich wartosci w strukturze kalibracyjnej
+
+  Serial.println(calibration.dig_T1);
+  Serial.println(calibration.dig_T2);
+  Serial.println(calibration.dig_T3);
+
+
 	calibration.dig_T1 = read(BME280_REGISTER_DIG_T1,2);
   calibration.dig_T2 = read(BME280_REGISTER_DIG_T2,2);
   calibration.dig_T3 = read(BME280_REGISTER_DIG_T3,2);
@@ -275,6 +283,9 @@ float BME280::readTemperature(void) {
   int32_t var1, var2;
 
   int32_t adc_T = read(BME280_REGISTER_TEMPDATA,3);
+  Serial.print("Raw adc_T: ");
+  Serial.println(adc_T, HEX);
+
   if (adc_T == 0x800000)
     return NAN;
   adc_T >>= 4;
@@ -287,6 +298,8 @@ float BME280::readTemperature(void) {
   t_fine = var1 + var2 + t_fine_adjust;
 
   int32_t T = (t_fine * 5 + 128) / 256;
+
+  Serial.println((float)T / 100);
 
   return (float)T / 100;
 
