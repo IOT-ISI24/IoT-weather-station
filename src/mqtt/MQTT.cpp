@@ -2,14 +2,13 @@
 #include <PubSubClient.h>
 #include <wifi/WiFiHandler.h>
 #include "../bme280v3/BME280.h"
-#include "../dust-sensor/DustSensor.h"
 
 
-const char* ssid = "Hotspot";
-const char* password = "heineken123";
+const char* ssid = "hotspot";
+const char* password = "694202137";
 
 
-const char* mqtt_server = "192.168.196.156";
+const char* mqtt_server = "10.204.41.0";
 const int mqtt_port = 1885;
 const char* mqtt_user = "user2";
 const char* mqtt_password = "password";
@@ -17,15 +16,11 @@ const char* mqtt_password = "password";
 const char* user_id = "2";
 const char* device_id = "device_1";
 
-#define ANALOG_PIN 36 // GPIO36 (ADC1_0) jako pin do odczytu analogowego
-#define LED_PIN 12    // GPIO12 jako pin sterujący diodą LED w czujniku pyłu
-
 BME280 bme280;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 WiFiHandler wifiHandler(ssid, password);
-DustSensor dustSensor(ANALOG_PIN, LED_PIN); 
 
 
 void reconnect() {
@@ -42,74 +37,73 @@ void reconnect() {
     }
   }
 }
-
-// String generate_payload(){
-//   float temperature = 25.0 + random(-100, 100) / 100.0;
-//   float air_quality = 50.0 + random(-500, 500) / 100.0;
-//   float pressure = 1013.0 + random(-200, 200) / 100.0;
-//   float humidity = 60.0 + random(-300, 300) / 100.0;
-//   String payload = "{";
-//   payload += "\"temperature\":" + String(temperature) + ",";
-//   payload += "\"air_quality\":" + String(air_quality) + ",";
-//   payload += "\"pressure\":" + String(pressure) + ",";
-//   payload += "\"humidity\":" + String(humidity);
-//   payload += "}";
-//   return payload;
-// }
+/*
+String generate_payload(){
+  float temperature = 25.0 + random(-100, 100) / 100.0;
+  float air_quality = 50.0 + random(-500, 500) / 100.0;
+  float pressure = 1013.0 + random(-200, 200) / 100.0;
+  float humidity = 60.0 + random(-300, 300) / 100.0;
+  String payload = "{";
+  payload += "\"temperature\":" + String(temperature) + ",";
+  payload += "\"air_quality\":" + String(air_quality) + ",";
+  payload += "\"pressure\":" + String(pressure) + ",";
+  payload += "\"humidity\":" + String(humidity);
+  payload += "}";
+  return payload;
+}*/
 
 String generate_payload() {
-    float temperature = bme280.readTemperature();
-    float humidity = bme280.readHumidity();
-    float pressure = bme280.readPressure() / 100.0F; // W hPa
-    float air_quality = 50.0; // Tutaj możesz dodać inny czujnik lub stałą
-    float dustDensity = dustSensor.readDustDensity();
+     float temperature = bme280.readTemperature();
+     //float temperature = 50.0;
+     float humidity = 50.0;
+     float pressure = 50.0;
+     //float humidity = bme280.readHumidity();
+     //float pressure = bme280.readPressure() / 100.0F; // W hPa
+     float air_quality = 50.0; // Tutaj możesz dodać inny czujnik lub stałą
 
-    String payload = "{";
-    payload += "\"temperature\":" + String(temperature, 2) + ",";
-    payload += "\"humidity\":" + String(humidity, 2) + ",";
-    payload += "\"pressure\":" + String(pressure, 2) + ",";
-    payload += "\"air_quality\":" + String(air_quality, 2);
-    payload += "\"dust_density\":" + String(dustDensity);
-    payload += "}";
+     String payload = "{";
+     payload += "\"temperature\":" + String(temperature, 2) + ",";
+     payload += "\"humidity\":" + String(humidity, 2) + ",";
+     payload += "\"pressure\":" + String(pressure, 2) + ",";
+     payload += "\"air_quality\":" + String(air_quality, 2);
+     payload += "}";
 
-    return payload;
+     return payload;
+ }
+
+
+void setup66() {
+  Serial.begin(9600);
+  wifiHandler.connectToWiFi();
+  client.setServer(mqtt_server, mqtt_port);
 }
 
+void setup() {
+     Serial.begin(9600);
+     wifiHandler.connectToWiFi();
+     client.setServer(mqtt_server, mqtt_port);
 
-// void setup6() {
-//   Serial.begin(9600);
-//   wifiHandler.connectToWiFi();
-//   client.setServer(mqtt_server, mqtt_port);
-// }
-
-void setup6() {
-    Serial.begin(9600);
-    wifiHandler.connectToWiFi();
-    client.setServer(mqtt_server, mqtt_port);
-    dustSensor.begin();
-
-    if (!bme280.begin(0x76)) {
-        Serial.println("Nie znaleziono czujnika BME280!");
-        while (1);
-    }
-    Serial.println("Czujnik BME280 zainicjalizowany.");
-}
+     if (!bme280.begin(0x76)) {
+         Serial.println("Nie znaleziono czujnika BME280!");
+         while (1);
+     }
+     Serial.println("Czujnik BME280 zainicjalizowany.");
+ }
 
 
-void loop6() {
+void loop() {
   wifiHandler.monitorConnection();
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
-
-  float temperature = 25.0 + random(-100, 100) / 100.0;
- 
-  String topic = String("/users/") + user_id + "/devices/" + device_id + "/data";
   String payload = generate_payload();
+  /*
+  String topic = String("/users/") + user_id + "/devices/" + device_id + "/data";
+  ;
   client.publish(topic.c_str(), payload.c_str());
-  Serial.print(payload);
 
+  */
   delay(5000);
 }
 
