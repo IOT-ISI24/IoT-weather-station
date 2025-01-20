@@ -1,7 +1,7 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <wifi/WiFiHandler.h>
-#include "BME280.h"
+#include "../bme280v3/BME280.h"
 
 
 const char* ssid = "Hotspot";
@@ -38,54 +38,54 @@ void reconnect() {
   }
 }
 
-String generate_payload(){
-  float temperature = 25.0 + random(-100, 100) / 100.0;
-  float air_quality = 50.0 + random(-500, 500) / 100.0;
-  float pressure = 1013.0 + random(-200, 200) / 100.0;
-  float humidity = 60.0 + random(-300, 300) / 100.0;
-  String payload = "{";
-  payload += "\"temperature\":" + String(temperature) + ",";
-  payload += "\"air_quality\":" + String(air_quality) + ",";
-  payload += "\"pressure\":" + String(pressure) + ",";
-  payload += "\"humidity\":" + String(humidity);
-  payload += "}";
-  return payload;
-}
-
-// String generate_payload() {
-//     float temperature = bme280.readTemperature();
-//     float humidity = bme280.readHumidity();
-//     float pressure = bme280.readPressure() / 100.0F; // W hPa
-//     float air_quality = 50.0; // Tutaj możesz dodać inny czujnik lub stałą
-
-//     String payload = "{";
-//     payload += "\"temperature\":" + String(temperature, 2) + ",";
-//     payload += "\"humidity\":" + String(humidity, 2) + ",";
-//     payload += "\"pressure\":" + String(pressure, 2) + ",";
-//     payload += "\"air_quality\":" + String(air_quality, 2);
-//     payload += "}";
-
-//     return payload;
+// String generate_payload(){
+//   float temperature = 25.0 + random(-100, 100) / 100.0;
+//   float air_quality = 50.0 + random(-500, 500) / 100.0;
+//   float pressure = 1013.0 + random(-200, 200) / 100.0;
+//   float humidity = 60.0 + random(-300, 300) / 100.0;
+//   String payload = "{";
+//   payload += "\"temperature\":" + String(temperature) + ",";
+//   payload += "\"air_quality\":" + String(air_quality) + ",";
+//   payload += "\"pressure\":" + String(pressure) + ",";
+//   payload += "\"humidity\":" + String(humidity);
+//   payload += "}";
+//   return payload;
 // }
 
+String generate_payload() {
+    float temperature = bme280.readTemperature();
+    float humidity = bme280.readHumidity();
+    float pressure = bme280.readPressure() / 100.0F; // W hPa
+    float air_quality = 50.0; // Tutaj możesz dodać inny czujnik lub stałą
 
-void setup6() {
-  Serial.begin(9600);
-  wifiHandler.connectToWiFi();
-  client.setServer(mqtt_server, mqtt_port);
+    String payload = "{";
+    payload += "\"temperature\":" + String(temperature, 2) + ",";
+    payload += "\"humidity\":" + String(humidity, 2) + ",";
+    payload += "\"pressure\":" + String(pressure, 2) + ",";
+    payload += "\"air_quality\":" + String(air_quality, 2);
+    payload += "}";
+
+    return payload;
 }
+
 
 // void setup6() {
-//     Serial.begin(9600);
-//     wifiHandler.connectToWiFi();
-//     client.setServer(mqtt_server, mqtt_port);
-
-//     if (!bme280.begin(0x76)) {
-//         Serial.println("Nie znaleziono czujnika BME280!");
-//         while (1);
-//     }
-//     Serial.println("Czujnik BME280 zainicjalizowany.");
+//   Serial.begin(9600);
+//   wifiHandler.connectToWiFi();
+//   client.setServer(mqtt_server, mqtt_port);
 // }
+
+void setup6() {
+    Serial.begin(9600);
+    wifiHandler.connectToWiFi();
+    client.setServer(mqtt_server, mqtt_port);
+
+    if (!bme280.begin(0x76)) {
+        Serial.println("Nie znaleziono czujnika BME280!");
+        while (1);
+    }
+    Serial.println("Czujnik BME280 zainicjalizowany.");
+}
 
 
 void loop6() {

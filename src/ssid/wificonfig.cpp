@@ -8,7 +8,7 @@ const char* config_ssid = "ESP32-AP-Config";
 const char* config_password = "zaq1@WSX";
 
 WiFiServer server(80);
-WiFiClient client;
+WiFiClient espclient;
 bool config_mode = false;
 
 
@@ -72,24 +72,24 @@ void loop()
 
 void config_loop()
 {
-	client = server.available();
+	espclient = server.available();
 
-	if(client)
+	if(espclient)
 	{
-		while(client.connected())
+		while(espclient.connected())
 		{
-			if(client.available())
+			if(espclient.available())
 			{
-				String header = client.readString();
+				String header = espclient.readString();
 				Serial.println(header);
 
-				client.println("HTTP/1.1 200 OK");
-				client.println("Content-type:text/html");
-				client.println("Connection: close");
-				client.println();
+				espclient.println("HTTP/1.1 200 OK");
+				espclient.println("Content-type:text/html");
+				espclient.println("Connection: close");
+				espclient.println();
 
-				client.println("<!DOCTYPE html><html><body><form method=\"POST\"><input type=\"text\" name=\"ssid\"><input type=\"text\" name=\"pass\"><input type=\"submit\"></form></body></html>");
-				client.println();
+				espclient.println("<!DOCTYPE html><html><body><form method=\"POST\"><input type=\"text\" name=\"ssid\"><input type=\"text\" name=\"pass\"><input type=\"submit\"></form></body></html>");
+				espclient.println();
 
 				if(header.startsWith("POST"))
 				{
@@ -140,7 +140,7 @@ void config_loop()
 			}
 		}
 
-		client.stop();
+		espclient.stop();
 		Serial.println("Disconnected client");
 	}
 	
