@@ -2,6 +2,8 @@
 #include <PubSubClient.h>
 #include <wifi/WiFiHandler.h>
 #include "../bme280v3/BME280.h"
+#include <Wire.h>
+
 
 
 const char* ssid = "hotspot";
@@ -80,10 +82,20 @@ void setup66() {
 
 void setup() {
      Serial.begin(9600);
+     Wire.begin(33, 32);
      wifiHandler.connectToWiFi();
+     Serial.println("I2C Scanner");
      client.setServer(mqtt_server, mqtt_port);
 
-     if (!bme280.begin(0x76)) {
+     for (uint8_t addr = 1; addr < 127; addr++) {
+        Wire.beginTransmission(addr);
+        if (Wire.endTransmission() == 0) {
+          Serial.print("Device found at address: 0x");
+          Serial.println(addr, HEX);
+        }
+      }
+
+     if (!bme280.begin(0x76, &Wire)) {
          Serial.println("Nie znaleziono czujnika BME280!");
          while (1);
      }
