@@ -3,11 +3,12 @@
 #include <wifi/WiFiHandler.h>
 #include "../bme280v3/BME280.h"
 #include <Wire.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
 
-
-
-const char* ssid = "hotspot";
-const char* password = "694202137";
+#define LED_PIN 2 
+// const char* ssid = "hotspot";
+// const char* password = "694202137";
 
 
 const char* mqtt_server = "10.204.41.0";
@@ -22,7 +23,8 @@ BME280 bme280;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-WiFiHandler wifiHandler(ssid, password);
+// WiFiHandler wifiHandler(ssid, password);
+WiFiHandler wifiHandler;
 
 
 void reconnect() {
@@ -74,15 +76,13 @@ String generate_payload() {
  }
 
 
-void setup66() {
-  Serial.begin(9600);
-  wifiHandler.connectToWiFi();
-  client.setServer(mqtt_server, mqtt_port);
-}
-
 void setup() {
      Serial.begin(9600);
      Wire.begin(33, 32);
+
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, LOW);
+
      wifiHandler.connectToWiFi();
      Serial.println("I2C Scanner");
      client.setServer(mqtt_server, mqtt_port);
@@ -114,10 +114,19 @@ void setup() {
 
 void loop() {
   wifiHandler.monitorConnection();
+
+  if (WiFi.status() == WL_CONNECTED) {
+      digitalWrite(LED_PIN, HIGH); // Turn on LED when connected to Wi-Fi
+  } else {
+      digitalWrite(LED_PIN, LOW); // Turn off LED when disconnected
+  }
+
   if (!client.connected()) {
     reconnect();
   }
+
   client.loop();
+  
   String payload = generate_payload();
   String topic = String("/users/") + user_id + "/devices/" + device_id + "/data";
   client.publish(topic.c_str(), payload.c_str());

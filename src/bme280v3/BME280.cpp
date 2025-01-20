@@ -283,8 +283,8 @@ float BME280::readTemperature(void) {
   int32_t var1, var2;
 
   int32_t adc_T = read(BME280_REGISTER_TEMPDATA,3);
-  Serial.print("Raw adc_T: ");
-  Serial.println(adc_T, HEX);
+  // Serial.print("Raw adc_T: ");
+  // Serial.println(adc_T, HEX);
 
   if (adc_T == 0x800000)
     return NAN;
@@ -299,7 +299,7 @@ float BME280::readTemperature(void) {
 
   int32_t T = (t_fine * 5 + 128) / 256;
 
-  Serial.println((float)T / 100);
+  // Serial.println((float)T / 100);
 
   return (float)T / 100;
 
