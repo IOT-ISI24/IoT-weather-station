@@ -5,13 +5,17 @@ constexpr const char* ble_service = "PROV_ESP32_WEATHER_STATION"; // BLE service
 
 WiFiHandler::WiFiHandler() : isWiFiConnected(false) {}
 
+
+
 // Starts BLE provisioning
 void WiFiHandler::setupProvisioning() {
+    btStop(); 
+    btStart();  
     Serial.println("Starting BLE provisioning...");
     NVS.begin();
-    NVS.erase("net_ssid", false); // Clear any existing credentials
-    NVS.erase("net_pass", false);
     NVS.commit();
+
+    
 
     WiFiProv.beginProvision(
         WIFI_PROV_SCHEME_BLE,
@@ -25,9 +29,6 @@ void WiFiHandler::setupProvisioning() {
 // Attempts to connect to Wi-Fi using stored credentials
 void WiFiHandler::connectToWiFiUsingSavedCredentials() {
     NVS.begin();
-
-    NVS.erase("net_ssid", false); // Clear any existing credentials
-    NVS.erase("net_pass", false);
 
 
     String net_ssid = NVS.getString("net_ssid");
