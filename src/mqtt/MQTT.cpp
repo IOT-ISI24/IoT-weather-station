@@ -4,10 +4,14 @@
 #include "../bme280v3/BME280.h"
 #include <Wire.h>
 
+#define LED_PIN 19
+#define DAC_PIN 25 
+
 const char* ssid = "Hotspot";
 const char* password = "iot_pres";
 String mac = WiFi.macAddress();
 
+///////////////////// !!! //////////////
 const char* mqtt_server = "192.168.252.156";
 const int mqtt_port = 1885;
 
@@ -17,7 +21,9 @@ BME280 bme280;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-WiFiHandler wifiHandler(ssid, password);
+// WiFiHandler wifiHandler(ssid, password);
+WiFiHandler wifiHandler;
+
 
 void reconnect() {
   while (!client.connected()) {
@@ -42,7 +48,18 @@ void reconnect() {
 
 String generate_payload() {
   float temperature = bme280.readTemperature();
+
   float humidity = bme280.readHumidity();
+    if (isnan(humidity)) {
+      return "";
+    }
+    int dacValue = map(humidity, 0, 100, 0, 255);
+    dacValue = constrain(dacValue, 0, 255); 
+    dacWrite(DAC_PIN, dacValue);
+
+    humidity = dacValue;
+
+
   float pressure = bme280.readPressure() / 100.0F; // W hPa
   float air_quality = 50.0; // Tutaj mo\u017cesz doda\u0107 inny czujnik lub sta\u0142\u0105
 
@@ -82,6 +99,9 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
 void setup() {
   Serial.begin(9600);
   Wire.begin(33, 32);
+
+  digitalWrite(LED_PIN, LOW);
+
   wifiHandler.connectToWiFi();
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(mqttCallback); // Set the MQTT callback function
@@ -103,10 +123,14 @@ void setup() {
 
 void loop() {
   wifiHandler.monitorConnection();
+
   if (!client.connected()) {
     reconnect();
   }
+
   client.loop();
+
+  digitalWrite(LED_PIN, HIGH);
 
   String payload = generate_payload();
   String topic = String("/data");
