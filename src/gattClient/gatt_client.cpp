@@ -1,14 +1,14 @@
-#include "BLEClientHandler.h"
+// #include "BLEClientHandler.h"
 
-BLEUUID serviceUUID("FFE0");
-BLEUUID charUUID("FFE1");
+// BLEUUID serviceUUID("FFE0");
+// BLEUUID charUUID("FFE1");
 
-BLEClientHandler bleClientHandler(serviceUUID, charUUID);
+// BLEClientHandler bleClientHandler(serviceUUID, charUUID);
 
-void setup55() {
-    bleClientHandler.setup();
-}
+// void setup55() {
+//     bleClientHandler.setup();
+// }
 
-void loop55() {
-    bleClientHandler.loop();
-}
+// void loop55() {
+//     bleClientHandler.loop();
+// }

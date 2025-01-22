@@ -1,3 +1,6 @@
+topic read /credentials/#
+topic write /credentials/#
+
 # ACL for user 1
 user user1
 topic read /users/1/devices/#

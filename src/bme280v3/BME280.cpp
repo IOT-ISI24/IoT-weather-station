@@ -2,6 +2,7 @@
 #include "Arduino.h"
 
 
+
 BME280::BME280() {
   address1 = 0x76;	// adres standardowy
   mode1 = 3;		    // tryb normal
@@ -27,18 +28,20 @@ BME280::~BME280(void) {
 * @param theWire pointer do wire.h
 */
 bool BME280::begin(uint8_t addr, TwoWire *theWire){
+    Serial.begin(9600);
     if (i2c_dev)
       delete i2c_dev;
     i2c_dev = new Adafruit_I2CDevice(addr, theWire);
     if (!i2c_dev->begin()){
+      Serial.println("Nie mozna polaczyc sie z czujnikiem BME280!");
       return false;
   }
 
     /* sprawdzenie id sensora odczzytanie wartosci rejestru BME280_REGISTER_CHIPID
     jezeli wartosc jest rozna od 0x60, wowczas to nie jest bme280*/
   _sensorID = read(BME280_REGISTER_CHIPID,0);
-  if (_sensorID != 0x60)
-    return false;
+  if (_sensorID != 0x60){
+    return false;}
 
   // reset czujnika - zapis do rejestru BME280_REGISTER_SOFTRESET wartosc 0xb6 wywolujac w ten sosob reset
   write(BME280_REGISTER_SOFTRESET, 0xB6);
@@ -275,8 +278,10 @@ float BME280::readTemperature(void) {
   int32_t var1, var2;
 
   int32_t adc_T = read(BME280_REGISTER_TEMPDATA,3);
+  delay(100);
+  /*
   if (adc_T == 0x800000)
-    return NAN;
+    return NAN; */
   adc_T >>= 4;
 
   var1 = (int32_t)((adc_T / 8) - ((int32_t)calibration.dig_T1 * 2));
@@ -307,8 +312,9 @@ float BME280::readPressure(void) {
   readTemperature();
 
   int32_t adc_P = read(BME280_REGISTER_PRESSUREDATA,3);
+  /*
   if (adc_P == 0x800000)
-    return NAN;
+    return NAN;*/
   adc_P >>= 4;
 
   var1 = ((int64_t)t_fine) - 128000;
@@ -343,8 +349,9 @@ float BME280::readHumidity(void) {
   readTemperature();
 
   int32_t adc_H = read(BME280_REGISTER_HUMIDDATA,1);
+  /*
   if (adc_H == 0x8000)
-    return NAN;
+    return NAN;*/
 
   var1 = t_fine - ((int32_t)76800);
   var2 = (int32_t)(adc_H * 16384);
