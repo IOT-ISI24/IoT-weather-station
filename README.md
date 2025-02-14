@@ -1,4 +1,4 @@
-[# Intelligent Weather Station on ESP32
+# Intelligent Weather Station on ESP32
 
 ## Project Description
 
